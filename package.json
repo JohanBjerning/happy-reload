@@ -1,0 +1,21 @@
+{
+  "name": "happy-reloader",
+  "version": "1.0.0",
+  "description": "Reload of happy dat",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "author": "Johan",
+  "license": "ISC",
+  "dependencies": {
+    "easy-table": "^1.1.1",
+    "enigma.js": "^2.4.0",
+    "express": "^4.16.4",
+    "express-async-handler": "^1.1.4",
+    "fs": "0.0.1-security",
+    "path": "^0.12.7",
+    "ws": "^6.2.0"
+  }
+}
