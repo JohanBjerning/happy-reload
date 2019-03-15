@@ -13,9 +13,7 @@ async function openSessionApp() {
     url: `ws://${configuration.connection.engineUrl}/app/engineData`,
     createSocket: url => new WebSocket(url),
   });
-  console.log('Session opened1.\n');
   const qix = await session.open(); 
-  console.log('Session opened1.\n');
   const app = await qix.openDoc(configuration.connection.appName);
   await qix.configureReload(true, true, false);
   console.log('Session opened.\n');
@@ -67,7 +65,11 @@ async function printTable(app, table) {
   console.log('==========');
   console.log(table.qName);
   console.log('----------');
-  const data = await app.getTableData(0, 100, true, table.qName);
+  const tablesandkeys = await app.getTablesAndKeys({}, {}, 0, true, false);
+  console.log(tablesandkeys.qtr[0].qNoOfRows);
+  const data = await app.getTableData(tablesandkeys.qtr[0].qNoOfRows - 1, 1, true, table.qName);
+
+  console.log(tablesandkeys);
   for (let index = 0; index < data.length; index += 1) {
     const row = data[index];
     table.qFields.forEach((field, idx) => {
@@ -77,7 +79,7 @@ async function printTable(app, table) {
   }
   console.log(easyTable.toString());
 }
-let test;
+
 async function printTables(app) {
   const tables = await getTables(app);
 
