@@ -5,45 +5,37 @@ const schema = require('enigma.js/schemas/3.2.json');
 const Table = require('easy-table');
 const fs = require('fs');
 const path = require('path');
-
-const host =  //process.env.TEST_HOST || 'localhost';
+const configuration = require('./config');
 
 async function openSessionApp() {
   const session = enigma.create({
     schema,
-    url: `ws://${host}:19076/app/engineData`,
+    url: `ws://${configuration.connection.engineUrl}/app/engineData`,
     createSocket: url => new WebSocket(url),
   });
-  const qix = await session.open();
-  const app = await qix.createSessionApp();
+  console.log('Session opened1.\n');
+  const qix = await session.open(); 
+  console.log('Session opened1.\n');
+  const app = await qix.openDoc(configuration.connection.appName);
   await qix.configureReload(true, true, false);
   console.log('Session opened.\n');
   return { session, qix, app };
 }
 
 const mysqlConnectionSettings = {
-
+    qType: 'jdbc', // the name we defined as a parameter to engine in our docker-compose.yml
+    qName: 'jdbc',
+    qConnectionString: configuration.connection.MySQLConnectionString, // the connection string includes both the provide to use and parameters to it.
+    qUserName: configuration.connection.MySQLUser,
+    qPassword: configuration.connection.MySQLPass,
   };
 
 async function createConnection(app, name, connectionString, type) {
   await app.createConnection(mysqlConnectionSettings);
 }
 
-const script2 = `
-SET DateFormat='YYYY-MM-DD';
-
-lib connect to 'jdbc';
-happy:
-LOAD
-Date(timestamp) as HappinessDate,
-Hour(TimeStamp(Round(timestamp, 1/24))) As Hour,
-happiness as Happiness;
-sql SELECT * FROM happy;
-`;
-
-
 async function setScriptAndDoReload(qix, app, script) {
-  await app.setScript(script2);
+  await app.setScript(script);
   await app.doReload();
 
   const progress = await qix.getProgress(0);
@@ -84,7 +76,7 @@ async function printTable(app, table) {
   }
   console.log(easyTable.toString());
 }
-
+let test;
 async function printTables(app) {
   const tables = await getTables(app);
 
@@ -102,11 +94,10 @@ async function closeSession(session) {
   console.log('Session closed.');
 }
 
-async function setupAndReload(scriptPath, printOutput) {
-  const script = script2;
-  const { session, qix, app } = await openSessionApp(script2);
-  await createConnection(app, mysqlConnectionSettings.qName, mysqlConnectionSettings.qConnectionString, mysqlConnectionSettings.qType);
-  const reloadOK = await setScriptAndDoReload(qix, app, script);
+async function setupAndReload(printOutput) {
+  const { session, qix, app } = await openSessionApp();
+  //await createConnection(app, mysqlConnectionSettings.qName, mysqlConnectionSettings.qConnectionString, mysqlConnectionSettings.qType);
+  const reloadOK = await setScriptAndDoReload(qix, app, configuration.script);
 
   if (printOutput) {
     await printTables(app);
