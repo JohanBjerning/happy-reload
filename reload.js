@@ -46,6 +46,7 @@ async function setScriptAndDoReload(qix, app, script) {
     }
     console.log(progress.qErrorData[0]);
   }
+  app.doSave();
 
   return progress.qErrorData.length === 0;
 }
