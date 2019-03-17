@@ -2,6 +2,9 @@
 const asyncHandler = require('express-async-handler');
 const reload = require('./reload');
 var WebSocketServer = require('websocket').server;
+var mysql = require('mysql');
+const configuration = require('./config');
+var dateFormat = require('dateformat');
 
 var http = require('http');
 var clients = [ ];
@@ -53,15 +56,42 @@ app.get('/reload', asyncHandler(async (req, res, next) => {
 }))
 
 app.put('/add/mood/:state', asyncHandler(async (req, res, next) => {
-    console.log(req.params.state);
-    //TODO: post to database
+    var state = req.params.state;
+    if (!state.match(/^(happy|sad|content)$/)) {
+        return res.status(400).send({
+            success: 'false',
+            message: 'Not supported value',
+            state
+          })
+    }
+    sendMessage(state);
+
+    var con = mysql.createConnection({
+        host: configuration.connection.MySQLHost,
+        user: configuration.connection.MySQLUser,
+        password: configuration.connection.MySQLPass,
+        database: configuration.connection.MySQLDatabase
+    });
+
+    con.connect(function(err) {
+        if (err) throw err;
+        var now=dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
+        var sql = "INSERT INTO happy (happiness, timestamp) VALUES ?";
+        var values = [[state, now]];
+        con.query(sql, [values], function (err, result) {
+            if (err) throw err;
+            con.end();
+        });
+    });
+    await reload.setupAndReload(true).catch((err) => console.log(err));
     return res.status(201).send({
         success: 'true',
         message: 'added successfully',
-        todo
+        state
       })
 }))
    
 app.listen(3002, () => {
- console.log("Server running on port 3001");
+ console.log("Server running on port 3002");
 });
+
