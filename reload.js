@@ -6,6 +6,7 @@ const Table = require('easy-table');
 const fs = require('fs');
 const path = require('path');
 const configuration = require('./config');
+const serverApp = require('./app');
 
 async function openSessionApp() {
   const session = enigma.create({
@@ -62,22 +63,19 @@ async function getTables(app) {
 
 async function printTable(app, table) {
   const easyTable = new Table();
-  console.log('==========');
-  console.log(table.qName);
-  console.log('----------');
   const tablesandkeys = await app.getTablesAndKeys({}, {}, 0, true, false);
-  console.log(tablesandkeys.qtr[0].qNoOfRows);
   const data = await app.getTableData(tablesandkeys.qtr[0].qNoOfRows - 1, 1, true, table.qName);
-
-  console.log(tablesandkeys);
   for (let index = 0; index < data.length; index += 1) {
     const row = data[index];
     table.qFields.forEach((field, idx) => {
       easyTable.cell(field.qName, row.qValue[idx].qText);
+      if(field.qName == "Happiness") {
+        serverApp.sendMessage(row.qValue[idx].qText);
+      }
     });
     easyTable.newRow();
   }
-  console.log(easyTable.toString());
+  //console.log(easyTable.toString());
 }
 
 async function printTables(app) {
