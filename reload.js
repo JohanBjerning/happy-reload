@@ -8,6 +8,14 @@ const path = require('path');
 const configuration = require('./config');
 const serverApp = require('./app');
 
+const mysqlConnectionSettings = {
+  qType: 'jdbc', // the name we defined as a parameter to engine in our docker-compose.yml
+  qName: 'jdbc',
+  qConnectionString: configuration.connection.MySQLConnectionString, // the connection string includes both the provide to use and parameters to it.
+  qUserName: configuration.connection.MySQLUser,
+  qPassword: configuration.connection.MySQLPass,
+};
+
 async function openSessionApp(create) {
   const session = enigma.create({
     schema,
@@ -16,24 +24,15 @@ async function openSessionApp(create) {
   });
   const qix = await session.open(); 
   if(create) {
-    qix.createApp(configuration.connection.appName)
+    await qix.deleteApp(configuration.connection.appName);
+    await qix.createApp(configuration.connection.appName);
+    const app = await qix.openDoc(configuration.connection.appName);
+    app.createConnection(mysqlConnectionSettings)
   }
   const app = await qix.openDoc(configuration.connection.appName);
   await qix.configureReload(true, true, false);
   console.log('Session opened.\n');
   return { session, qix, app };
-}
-
-const mysqlConnectionSettings = {
-    qType: 'jdbc', // the name we defined as a parameter to engine in our docker-compose.yml
-    qName: 'jdbc',
-    qConnectionString: configuration.connection.MySQLConnectionString, // the connection string includes both the provide to use and parameters to it.
-    qUserName: configuration.connection.MySQLUser,
-    qPassword: configuration.connection.MySQLPass,
-  };
-
-async function createConnection(app, name, connectionString, type) {
-  await app.createConnection(mysqlConnectionSettings);
 }
 
 async function setScriptAndDoReload(qix, app, script) {
