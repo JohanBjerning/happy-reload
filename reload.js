@@ -8,13 +8,16 @@ const path = require('path');
 const configuration = require('./config');
 const serverApp = require('./app');
 
-async function openSessionApp() {
+async function openSessionApp(create) {
   const session = enigma.create({
     schema,
     url: `ws://${configuration.connection.engineUrl}/app/engineData`,
     createSocket: url => new WebSocket(url),
   });
   const qix = await session.open(); 
+  if(create) {
+    qix.createApp(configuration.connection.appName)
+  }
   const app = await qix.openDoc(configuration.connection.appName);
   await qix.configureReload(true, true, false);
   console.log('Session opened.\n');
@@ -95,8 +98,12 @@ async function closeSession(session) {
   console.log('Session closed.');
 }
 
+async function createApp() {
+  await openSessionApp(true);
+}
+
 async function setupAndReload(printOutput) {
-  const { session, qix, app } = await openSessionApp();
+  const { session, qix, app } = await openSessionApp(false);
   //await createConnection(app, mysqlConnectionSettings.qName, mysqlConnectionSettings.qConnectionString, mysqlConnectionSettings.qType);
   const reloadOK = await setScriptAndDoReload(qix, app, configuration.script);
 
@@ -110,3 +117,4 @@ async function setupAndReload(printOutput) {
 }
 
 module.exports.setupAndReload = setupAndReload;
+module.exports.createApp = createApp;

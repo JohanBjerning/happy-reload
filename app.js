@@ -55,6 +55,18 @@ app.get('/reload', asyncHandler(async (req, res, next) => {
     res.send(test);
 }))
 
+app.put('/create/app', asyncHandler(async (req, res, next) => {
+  var state = req.params.state;
+  sendMessage(state);
+
+  await reload.createApp().catch((err) => console.log(err));
+  return res.status(201).send({
+      success: 'true',
+      message: 'added successfully',
+      state
+  })
+}))
+
 app.put('/add/mood/:state', asyncHandler(async (req, res, next) => {
     var state = req.params.state;
     if (!state.match(/^(happy|sad|content)$/)) {
